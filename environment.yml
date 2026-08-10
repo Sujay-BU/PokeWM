@@ -1,0 +1,14 @@
+# Reproduces the validated environment.
+#
+#   conda env create -f environment.yml
+#   conda activate pokewm
+#   pip install -r requirements.txt      # torch needs the CUDA wheel index
+#
+# The pip step is separate because the CUDA 12.8 PyTorch wheels are not on PyPI's
+# default index and conda cannot resolve them.
+name: pokewm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip

@@ -1,0 +1,22 @@
+# Install with:
+#   pip install --index-url https://download.pytorch.org/whl/cu128 torch
+#   pip install -r requirements.txt
+#
+# Versions below are the ones this repository was developed and validated against on
+# an RTX 4050 Laptop (6 GB, driver 595.84, CUDA 13.2) with Python 3.11.
+
+torch==2.11.0+cu128      # from https://download.pytorch.org/whl/cu128
+pyboy==2.7.0
+gymnasium==1.3.0
+numpy==2.4.6
+pillow==12.3.0
+requests==2.34.2
+tqdm==4.70.0
+PyYAML==6.0.3
+rich==15.0.0
+einops==0.8.2
+tensorboard==2.21.0
+
+# tests
+pytest==9.1.1
+pytest-timeout==2.4.0
