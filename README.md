@@ -156,6 +156,8 @@ a mid-training policy wedges itself, so the window keeps showing something.
 Checkpoints are written every 20 000 env steps **or** every 5 minutes, whichever comes
 first, and both SIGINT and SIGTERM checkpoint before exiting.
 
+`scripts/train.sh` also takes `watch` (tail the log) and `status`.
+
 Useful flags: `--preset cpu` (no-GPU fallback, ~7 M params), `--no-llm` (disable the
 proposer), `--no-archive` (ablate Go-Explore), `--llm-vision` (use `qwen3-vl:8b`; slower,
 see ARCHITECTURE §7), `--fresh` (ignore checkpoint), `--envs N`, `--replay-ratio R`.
@@ -186,16 +188,23 @@ pytest -m llm                 # requires a running Ollama daemon
 
 | file | covers |
 |---|---|
-| `test_ram_map.py` | WRAM offsets re-derived from known addresses, BCD money, symbolic encoding |
-| `test_milestones.py` | chain structure, predicate monotonicity, tracker |
-| `test_subgoals.py` | vocabulary, tolerant parsing, verification predicates, no-reward-for-regression |
-| `test_nets.py` | symlog/symexp, two-hot expectation, λ-returns vs closed form, KL free bits |
-| `test_wm.py` | RSSM reset semantics, gradient coverage, JSD bounds, actor-critic |
-| `test_replay.py` | ring wrap, frame-stack reconstruction across episode boundaries, priorities |
-| `test_archive.py` | insertion, eviction, **frontier monotonicity under pressure**, persistence |
-| `test_env.py` | ROM hash, bootstrap, determinism, save states, reward first-visit credit |
-| `test_llm.py` | JSON extraction, offline degradation, scheduling, live Ollama |
-| `test_trainer.py` | end-to-end run, checkpoint/resume, replay ratio |
+| `test_env.py` | 160 | ROM hash, bootstrap, determinism, save states, every reward term's credit rule |
+| `test_archive.py` | 111 | insertion, eviction shields, **frontier monotonicity under pressure**, viability, strength reservation, persistence |
+| `test_milestones.py` | 77 | chain structure, predicate monotonicity, `map_rank`, expert-step budget, tracker |
+| `test_llm.py` | 44 | JSON extraction, offline degradation, scheduling, live Ollama |
+| `test_ram_map.py` | 43 | WRAM offsets re-derived from known addresses, BCD money, menu decoding, symbolic encoding |
+| `test_trainer.py` | 43 | end-to-end run, checkpoint/resume, replay ratio, model-lock hold time |
+| `test_nets.py` | 40 | symlog/symexp, two-hot expectation, λ-returns vs closed form, KL free bits, unimix floor |
+| `test_wm.py` | 35 | RSSM reset semantics, gradient coverage, JSD bounds, actor-critic |
+| `test_stall.py` | 33 | plateau detection over the metrics stream |
+| `test_subgoals.py` | 28 | vocabulary, tolerant parsing, verification predicates, no-reward-for-regression |
+| `test_replay.py` | 19 | ring wrap, frame-stack reconstruction across episode boundaries, priorities |
+| `test_vec_env.py` | 15 | worker snapshot triggers, cell keys, info payload completeness |
+
+Several tests encode a *measurement* in their docstring rather than a guessed invariant,
+`test_the_stall_charge_exceeds_a_wipe` is the clearest example, and it replaced an earlier
+test asserting the exact opposite. When a live run refutes an invariant, the test is
+rewritten with the evidence, not deleted.
 
 ---
 
