@@ -3,10 +3,10 @@
 This document proves what can be proved and is explicit about what cannot.
 
 The headline result is **Lemma 2**: the frontier archive converts the probability of
-completing Pokémon Red from a *product* of 45 per-milestone success probabilities into a
+completing Pokémon Red from a *product* of 63 per-milestone success probabilities into a
 *sum* of their reciprocals. At a per-milestone success rate of 0.1 that is the difference
-between 10⁻⁴⁵ and roughly 10⁴ episodes, 49 orders of magnitude. Everything else in this
-document is either supporting machinery for that lemma or an honest accounting of its
+between 10⁻⁶³ and roughly 3×10³ episodes — **59.5 orders of magnitude**. Everything else in
+this document is either supporting machinery for that lemma or an honest accounting of its
 assumptions.
 
 Two theorems follow. **Theorem 1** is unconditional given the structural assumptions and
@@ -42,17 +42,17 @@ consequences matter:
    the return-policy machinery that stochastic domains require.
    Verified by `tests/test_env.py::TestDynamics::test_emulator_is_deterministic_given_the_same_actions`.
 2. The agent nevertheless faces a POMDP, because the observation
-   $o = O(x) \in \mathbb{R}^{5\times72\times80}\times\mathbb{R}^{22}\times\{0,1\}^{24}$
+   $o = O(x) \in \mathbb{R}^{5\times72\times80}\times\mathbb{R}^{32}\times\{0,1\}^{24}$
    discards most of $x$. The RSSM's recurrent state is the belief-state approximation.
 
 ### 1.2 The milestone chain
 
-Define $L+1 = 46$ predicates $\varphi_0,\dots,\varphi_L$ on trajectory prefixes
+Define $L+1 = 64$ predicates $\varphi_0,\dots,\varphi_L$ on trajectory prefixes
 (`pokewm/agent/milestones.py`), with $\varphi_0 \equiv \text{true}$ and $\varphi_L$ =
 "the Hall of Fame map has been entered".
 
 **Monotonicity (M).** Each $\varphi_i$ is monotone along a trajectory: if it holds at time
-$t$ it holds at all $t' > t$. This holds by construction, every predicate is a threshold
+$t$ it holds at all $t' > t$. This holds by construction — every predicate is a threshold
 on a quantity that only increases (a badge bit, a party count, a Pokédex count, membership
 of the visited-map set). Verified by
 `tests/test_milestones.py::TestMonotonicity`.
@@ -107,7 +107,7 @@ most $H_i$ produces level $\ge i+1$.
 > gym leader remains obtainable indefinitely, and the player cannot dispose of HMs or of
 > the last Pokémon in the party. The game is therefore completable from any legally
 > reachable state. `MILESTONES[i].expert_steps` records a human-expert estimate of $H_i$;
-> the largest is 6000 and the total is 124 400.
+> the largest is 6000 and the total is 125 900.
 >
 > Note the assumption is only about *some* cell at each level, not all of them. This is
 > what the archive buys: a worker that walks into a locally unproductive state costs one
@@ -150,8 +150,8 @@ $s \ge M$ and a cell at depth $k$ has $s \le M-k+w$, giving
 $$\sigma \;\ge\; \frac{n_0}{\sum_{k\ge0} n_k e^{-(k-w)}} \;\ge\; \frac{n_0(e-1)}{n_{\max}e^{w+1}} \;\approx\; 0.233\,\frac{n_0}{n_{\max}}.$$
 
 **That derivation is unsound for the score actually implemented.** The real score carries
-two further terms, $\mu\,r(c)$ for map rank ($\mu = 1$, $r \le 46$) and $\beta = 6$ for
-sitting on a target map, so a cell at depth $k$ can outscore a frontier cell by up to
+two further terms — $\mu\,r(c)$ for map rank ($\mu = 1$, $r \le 63$) and $\beta = 6$ for
+sitting on a target map — so a cell at depth $k$ can outscore a frontier cell by up to
 $\mu R + \beta - k$. The depth term stops dominating and the geometric decay in $k$
 disappears.
 
@@ -159,12 +159,12 @@ This was not a theoretical worry. Measured at 15.6M env steps: of the 24 archive
 cells, 22 were one level stale, and they took $\approx 80\%$ of on-target restores even
 though $n_0/n_{\max} \approx 1$. The stale level was pre-parcel-delivery, in which the old
 man still blocks Viridian's north exit, so those episodes began in a world where the next
-milestone was *unreachable*, $p_i = 0$, not merely small. The run held milestone 9 for
+milestone was *unreachable* — $p_i = 0$, not merely small. The run held milestone 9 for
 2.0M steps.
 
 The lesson generalises beyond the bug: $\ell$ is not a "distance travelled" coordinate
-that other terms may trade against. It indexes irreversible world state, gates opened,
-key items held, NPCs moved, and A3 is a statement about *that*, so the selection rule has
+that other terms may trade against. It indexes irreversible world state — gates opened,
+key items held, NPCs moved — and A3 is a statement about *that*, so the selection rule has
 to guarantee it structurally rather than through a weight comparison. Explicitly
 restricting the candidate set does; a softmax over hand-weighted features does not.
 
@@ -178,7 +178,7 @@ mass is what lets the run abandon it. The ratio $n_0/n_{\max}$ is still logged a
 **Lemma 2 (exponential-to-linear reduction).** Suppose that from a level-$i$ frontier cell
 a single episode attains level $\ge i+1$ with probability at least $p_i > 0$. Then:
 
-**(a) Without archive resets**, every episode starts from the game's opening state, the
+**(a) Without archive resets** — every episode starts from the game's opening state — the
 probability that a single episode completes the game is at most $\prod_{i=0}^{L-1} p_i$,
 so the expected number of episodes is at least $\big(\prod_i p_i\big)^{-1}$. With
 $p_i \equiv p$ this is $p^{-L}$.
@@ -199,21 +199,21 @@ so the number of episodes spent in phase $i$ is stochastically dominated by a ge
 random variable with parameter $\rho\sigma p_i$, whose mean is $(\rho\sigma p_i)^{-1}$.
 Phases are disjoint in time, so expectations add. 
 
-**The point.** With $p = 0.1$ and $L = 45$:
+**The point.** With $p = 0.1$ and $L = 63$:
 
 | | expected episodes |
 |---|---|
-| no archive (Lemma 2a) | $10^{45}$ |
-| with archive (Lemma 2b), $\rho\sigma = 0.2$ | $\approx 2.3\times10^{4}$ |
+| no archive (Lemma 2a) | $10^{63}$ |
+| with archive (Lemma 2b), $\rho\sigma = 0.2$ | $\approx 3.2\times10^{3}$ |
 
 The archive does not make the agent smarter. It removes the requirement that the agent be
-lucky 45 times *in a row*, which is the only reason the unassisted problem is hopeless.
+lucky 63 times *in a row*, which is the only reason the unassisted problem is hopeless.
 This is the Go-Explore insight (Ecoffet et al., *Nature* 590, 2021) specialised to a
 deterministic emulator, where "return to a cell" is a save-state load and therefore exact.
 
 ---
 
-## 4. Theorem 1: almost-sure completion
+## 4. Theorem 1 — almost-sure completion
 
 **Theorem 1.** Under (A1) and (A2), with the policy of Lemma 1 and $T \ge \max_i H_i$,
 
@@ -238,16 +238,16 @@ phase.
 
 **What Theorem 1 is and is not.** It establishes that the algorithm is not *structurally*
 incapable of finishing: there is no state from which it is stuck, and no positive
-probability of permanent failure. Its rate is worthless, $\varepsilon^{H_i}$ for
+probability of permanent failure. Its rate is worthless — $\varepsilon^{H_i}$ for
 $H_i = 2000$ is about $10^{-5680}$. Theorem 1 says the floor is above zero. Theorem 2 says
 what actually happens.
 
 ---
 
-## 5. Theorem 2: finite-sample bound
+## 5. Theorem 2 — finite-sample bound
 
-Theorem 1 used only the exploration floor. The learned components, world model, shaped
-reward, imagination actor-critic, LLM subgoals, exist to replace $\varepsilon^{H_i}$ with
+Theorem 1 used only the exploration floor. The learned components — world model, shaped
+reward, imagination actor-critic, LLM subgoals — exist to replace $\varepsilon^{H_i}$ with
 something usable.
 
 **(A4) Learnability.** There is $p_{\min} > 0$ such that, after the world model has been
@@ -267,38 +267,71 @@ within $N_i$ episodes with probability at most $(1-\rho\sigma p_i)^{N_i} \le
 e^{-N_i\rho\sigma p_{\min}}$. Union bound over the $L$ phases. 
 
 The bound is linear in $L$ and in $1/p_{\min}$, and only logarithmic in $1/\delta$. That
-shape, rather than the constants, is the design goal the architecture was built to hit.
+shape — rather than the constants — is the design goal the architecture was built to hit.
 
 ---
 
-## 6. The reward signal does not move the optimum
+## 6. What the reward signal does to the optimum
 
-Theorem 2 assumes learning helps. This section shows the shaping used to *make* it help
-does not corrupt the objective.
+Theorem 2 assumes learning helps. This section accounts for the shaping used to *make* it
+help: four of the five shaped classes provably leave the optimal policy set unchanged, and
+the fifth does not. An earlier edition of this document was titled *"the reward signal does
+not move the optimum"* and that claim is no longer true — §6.1c is the correction, and it
+is a deliberate design decision rather than an oversight.
 
 The per-step reward decomposes as
 
-$$r_t \;=\; \underbrace{r^{\text{prog}}_t}_{\text{monotone progress}} \;+\; \underbrace{r^{\text{nov}}_t}_{\text{first-visit novelty}} \;+\; \underbrace{r^{\text{epi}}_t}_{\text{model disagreement}} \;+\; \underbrace{r^{\text{sub}}_t}_{\text{LLM subgoal}} \;+\; \underbrace{r^{\text{step}}}_{\text{constant cost}} .$$
+$$r_t \;=\; \underbrace{r^{\text{prog}}_t}_{\text{potential-based}} \;+\; \underbrace{r^{\text{evt}}_t}_{\text{repeatable events}} \;+\; \underbrace{r^{\text{nov}}_t}_{\text{first-visit novelty}} \;+\; \underbrace{r^{\text{epi}}_t}_{\text{model disagreement}} \;+\; \underbrace{r^{\text{sub}}_t}_{\text{LLM subgoal}} \;+\; \underbrace{r^{\text{step}}}_{\text{constant cost}} .$$
+
+Four of these five shaped classes provably cannot move the optimum. The fifth,
+$r^{\text{evt}}$, **can**, and §6.1c states by how much rather than pretending otherwise.
 
 ### 6.1 Progress terms are potential-based
 
-$r^{\text{prog}}$ pays $w_k \Delta N_k$ whenever one of the monotone counters $N_k \in$
-{story flags, badges, party level sum, Pokédex owned, Pokédex seen} increases. Within an
+$r^{\text{prog}}$ pays $w_k \Delta N_k$ on a set of state functions $N_k$. Within an
 episode each $N_k$ is a function of state, so with
 
 $$\Phi(s) \;=\; \sum_k w_k N_k(s)$$
 
 we have exactly $r^{\text{prog}}_t = \Phi(s_{t+1}) - \Phi(s_t)$.
 
+Two sub-classes differ in how $\Delta$ is taken, and the distinction is not cosmetic —
+see §6.1a:
+
+| sub-class | $\Delta$ taken against | members |
+|---|---|---|
+| **monotone** | the running maximum | story flags, badges, party level sum, party size, Pokédex owned/seen, money |
+| **symmetric** | the previous step | party HP fraction, status conditions, Poké Balls held, map rank |
+
 Ng, Harada & Russell (1999) show that shaping of the form $F = \gamma\Phi(s') - \Phi(s)$
 leaves the optimal policy set unchanged. We use the $\gamma = 1$ form, so the discrepancy
 is $(1-\gamma)\Phi(s')$, bounded by $(1-\gamma)\Phi_{\max}$ with $\gamma = 0.997$ and
-$\Phi_{\max} = 4{\cdot}320 + 64{\cdot}8 + 0.6{\cdot}600 + 2{\cdot}151 + 0.2{\cdot}151 \approx 2494$.
-The induced value perturbation is at most $(1-\gamma)\Phi_{\max}/(1-\gamma) = \Phi_{\max}$
-in the worst case, and, more usefully, the *ordering* perturbation between two policies
-is at most $(1-\gamma)\Phi_{\max} \approx 7.5$ per step of divergence. Since a badge is
-worth 64 and the terminal milestone dominates, the optimum ordering over policies that
-differ in whether they finish the game is preserved.
+
+$$\Phi_{\max} = \underbrace{4{\cdot}320}_{1280} + \underbrace{64{\cdot}8}_{512} + \underbrace{2{\cdot}600}_{1200} + \underbrace{8{\cdot}6}_{48} + \underbrace{2{\cdot}151}_{302} + \underbrace{0.2{\cdot}151}_{30} + \underbrace{2{\times}10^{-4}{\cdot}10^{6}}_{200} + \underbrace{1.5{\cdot}6}_{9} + \underbrace{3 + 3}_{6} + \underbrace{0.5{\cdot}63}_{32} \approx 3619 .$$
+
+The *ordering* perturbation between two policies is at most
+$(1-\gamma)\Phi_{\max} \approx 10.9$ per step of divergence. A badge is worth 64 and the
+terminal milestone dominates, so the optimum ordering over policies that differ in whether
+they finish the game is preserved — but note the margin has tightened from ~8.5× to ~5.9×
+as terms were added. **$\Phi_{\max}$ is a budget, not a free parameter**: adding progress
+weight indefinitely would eventually let per-step shaping discrepancy rival a badge.
+
+### 6.1a Monotone credit is wrong for anything spendable
+
+The monotone form pays on the running maximum, so a term can be earned once and never
+again. That is correct precisely when the underlying quantity cannot decrease.
+
+Applying it to a *consumable* does not merely under-reward the resource — it kills the term
+permanently the first time the resource is spent. Measured: Oak hands over 5 Poké Balls,
+the agent threw them all, and `max_balls` was then pinned at a value the bag could never
+reach again — 1, while all 607 archived cells held 0 balls. Buying a ball would have paid
+exactly nothing, forever, and `reward/ball` had never once fired.
+
+The symmetric form is the fix, and it is the *more* conservative of the two with respect to
+this section's argument: it telescopes exactly, so its contribution to any closed loop in
+state space is identically zero. A cycle that spends and re-acquires a ball nets 0. This is
+Ng–Harada–Russell in its original form; the monotone variant is the one that needs the
+extra "can only increase" hypothesis. `reward/ball` fired within 300k steps of the change.
 
 ### 6.1b No per-step penalty may exceed the earning rate
 
@@ -317,15 +350,59 @@ Two independent guards now hold:
    False`). In the game a blackout teleports the player to a Pokecenter and play
    continues, so modelling it as an ending was simply wrong. With no reachable terminal
    state other than truncation, there is nothing to escape *to*, and the argument above
-   cannot be run at all, no penalty tuning required.
+   cannot be run at all — no penalty tuning required.
 2. **Numeric.** $c < e$ is asserted directly by
    `tests/test_env.py::TestRewards::test_per_step_penalties_cannot_exceed_the_intrinsic_earning_rate`,
    so the per-step baseline stays positive while exploring.
 
 This is worth stating as a general rule for shaped long-horizon tasks: *a per-step penalty
 larger than the per-step earning rate converts "end the episode" into the optimal policy,*
-and the effect scales with the horizon, which is precisely the regime this project
+and the effect scales with the horizon — which is precisely the regime this project
 operates in.
+
+### 6.1c The event terms are *not* policy-invariant, and this is a deliberate trade
+
+$r^{\text{evt}}$ — `battle_won` (+3.0), `enemy_damage` (+1.0 per opponent HP bar),
+`heal_visit` (+2.0), `faint` (−5.0) — pays on *transitions*, not on a state function. It
+does not telescope, and the positive members are repeatable without bound. **They can
+therefore move the optimum, and this section quantifies the damage rather than denying it.**
+
+**Why they exist.** The invariant reward produced a policy that would not fight. With
+`enemy_damage` worth at most 1.0 for a full opponent bar and `faint` costing 5.0, fleeing —
+which pays exactly 0 at no risk — *strictly dominated* fighting. Measured over 4000 steps
+from healthy archive restores: 40 battles entered, party level sum 8 → 8, in-battle action
+mix 23% B against 15% A. `reward/level` had never fired in 81M steps. Since levels gate the
+entire mid-game, a reward that is policy-invariant and also incapable of producing a policy
+that levels up is invariant around the wrong optimum.
+
+**The exposure, quantified.** The grinding fixed point is: win wild battles forever. At
++3.0 per battle and ~50–100 steps per battle, that is 0.03–0.06 per step, worth
+$0.06/(1-\gamma) = 20$ discounted at $\gamma = 0.997$. Against a badge at 64 that is not
+negligible — it is roughly a third of a badge, permanently available. Three structural
+facts bound it:
+
+1. **Episodes truncate at $T = 8192$.** A grinding policy collects at most $\approx 3{\cdot}164 = 492$
+   from `battle_won` in an episode, against $\Phi_{\max} \approx 3619$ of progress reward
+   available on the critical path.
+2. **The archive selects on $\ell$ and `map_rank`, not on return.** A worker that grinds
+   produces cells that do not advance the frontier, so grinding does not propagate into
+   the launch distribution the way progress does. This is the load-bearing mitigation:
+   Lemma 2's phase argument depends on $M_n$, which `battle_won` cannot increase.
+3. **The XP it buys is itself progress.** Unlike a true noisy-TV, the farmed quantity is
+   the one that gates Brock, Mt. Moon and Misty. Grinding is the *intended* behaviour
+   early; it only becomes pathological if it persists once levels are sufficient.
+
+**Honest status.** (1) and (3) are bounds on the harm; (2) is the reason it does not
+compound. None of them is a proof of policy invariance, and none is claimed to be. The
+empirically observed failure has consistently been the *opposite* one — the agent
+under-fights, and every measurement to date shows `battle_won` firing far below the
+grinding rate — so the term is currently correcting a deficit rather than creating a
+surplus. If a future run shows the agent grinding at a level well past what the next
+milestone needs, the correct fix is to make the payout decay in party level (restoring a
+bounded total, as in §6.2), not to remove it.
+
+This is the one place in this document where a shaping term is known to perturb the
+optimum. It is recorded in §9's failure-mode table.
 
 ### 6.2 Novelty terms are summable
 
@@ -336,7 +413,7 @@ entire run is bounded**:
 
 $$\sum_{t=0}^{\infty} r^{\text{nov}}_t \;\le\; w_{\text{map}}\,|\mathcal{M}| + w_{\text{tile}}\,|\mathcal{C}| \;=\; 3{\cdot}248 + 0.02{\cdot}|\mathcal{C}| .$$
 
-With at most $248$ maps of at most $\sim\!2^{14}$ tiles, this is under $10^{4}$, finite,
+With at most $248$ maps of at most $\sim\!2^{14}$ tiles, this is under $10^{4}$ — finite,
 and *independent of run length*. Hence the average novelty reward per step tends to $0$,
 the bonus vanishes asymptotically, and the limiting objective is the unshaped one. This is
 the standard optimism-under-summable-bonus condition (Strehl & Littman 2008, MBIE-EB).
@@ -346,18 +423,18 @@ the standard optimism-under-summable-bonus condition (Strehl & Littman 2008, MBI
 $r^{\text{epi}}$ is the Jensen–Shannon divergence of the 4-member ensemble, which satisfies
 $0 \le \mathrm{JSD} \le \ln 4$ by construction
 (`tests/test_wm.py::TestEnsemble::test_jsd_is_bounded_by_log_n`). At weight $1.0$ it is
-therefore bounded by $\ln 4 \approx 1.386$ per step, still two orders of magnitude below
+therefore bounded by $\ln 4 \approx 1.386$ per step — still two orders of magnitude below
 a badge (64), which is the bound that matters for §6.1's ordering argument, and checked by
 `tests/test_env.py::TestRewards::test_epistemic_weight_stays_bounded_against_extrinsic_reward`.
 
 The weight had to be raised from $0.1$: the first long run measured a typical
 $\mathrm{JSD}$ of $0.019$, so the intrinsic drive was $0.00185$ per step against a step
 cost of $0.002$. The two cancelled almost exactly, imagined return went *negative*, and
-the agent's optimal imagined plan was to stand still, exploration stalled for 2.7M steps.
+the agent's optimal imagined plan was to stand still — exploration stalled for 2.7M steps.
 The step cost is now $0.0005$, an order of magnitude below the intrinsic term, so
 exploration has a strictly positive gradient. Note this does not affect the argument
 below: the bonus is still bounded and still decays to zero as the model fits. As the world model fits a region the
-ensemble members converge and the term decays to zero there, it is an uncertainty
+ensemble members converge and the term decays to zero there — it is an uncertainty
 estimate, not a prediction error, so it does **not** persist on stochastic-but-learned
 transitions (the noisy-TV failure mode; Pathak et al. 2017 → Plan2Explore, Sekar et al.
 2020).
@@ -368,7 +445,7 @@ Three properties, all enforced in code:
 
 1. **Closed vocabulary.** `parse_subgoal` maps every possible model output into
    $\{0,\dots,23\}$; an unparseable or unknown answer becomes `MAIN_QUEST`, whose predicate
-   is "a story flag advanced", i.e. the extrinsic objective itself. A malformed response
+   is "a story flag advanced" — i.e. the extrinsic objective itself. A malformed response
    degrades to *no guidance*, never to *wrong guidance*.
    (`tests/test_subgoals.py::TestParsing`.)
 2. **Verified payout.** The bonus fires only when a machine-checkable predicate over
@@ -393,41 +470,74 @@ distribution over exploration, not a term that can dominate the return.**
 
 | symbol | meaning | value | source |
 |---|---|---|---|
-| $L$ | milestone transitions | 45 | `NUM_MILESTONES - 1` |
+| $L$ | milestone transitions | 63 | `NUM_MILESTONES - 1` |
 | $\varepsilon$ | action-probability floor | $1.43\times10^{-3}$ | unimix $0.01/7$ |
 | $\rho$ | archive restore probability | 0.85 | `ArchiveConfig.restore_prob` |
 | $\sigma$ | frontier selection probability | $\ge 0.8$ | Lemma 2b (`frontier_prob`) |
 | $T$ | steps per episode | 8192 | `EnvConfig.max_episode_steps` |
-| $\sum_i H_i$ | expert steps, whole game | 124 400 | `TOTAL_EXPERT_STEPS` |
-|, | measured throughput | ~1200 env steps/s | 8 workers + concurrent learner |
+| $\sum_i H_i$ | expert steps, whole game | 125 900 | `TOTAL_EXPERT_STEPS` |
+| — | measured throughput | **455 env steps/s** | sustained over 88.7M steps, 12 workers + concurrent learner |
 
 With $\rho\sigma \ge 0.85 \times 0.8 = 0.68$ and $\delta = 0.05$:
 
-$$N \;\ge\; \frac{45}{0.68\,p_{\min}}\,\ln\frac{45}{0.05} \;=\; \frac{450}{p_{\min}} \ \text{episodes}.$$
+$$N \;\ge\; \frac{63}{0.68\,p_{\min}}\,\ln\frac{63}{0.05} \;=\; \frac{661}{p_{\min}} \ \text{episodes}.$$
 
-| $p_{\min}$ | episodes | env steps (at $T=8192$) | wall-clock at 1200 steps/s |
+| $p_{\min}$ | episodes | env steps (at $T=8192$) | wall-clock at 455 steps/s |
 |---|---|---|---|
-| 0.30 | 1 500 | $1.2\times10^{7}$ | ~3 hours |
-| 0.10 | 4 500 | $3.7\times10^{7}$ | ~9 hours |
-| 0.05 | 9 000 | $7.4\times10^{7}$ | ~17 hours |
-| 0.01 | 45 000 | $3.7\times10^{8}$ | ~3.5 days |
+| 0.30 | 2 205 | $1.8\times10^{7}$ | ~11 hours |
+| 0.10 | 6 614 | $5.4\times10^{7}$ | ~33 hours |
+| 0.05 | 13 228 | $1.1\times10^{8}$ | ~2.8 days |
+| 0.01 | 66 140 | $5.4\times10^{8}$ | ~14 days |
 
-The previous edition of this table used $\rho\sigma \approx 0.198$, from the unsound
-bound corrected in §3.2, and was 3.4$\times$ more pessimistic. The correction cuts the
-*bound*; it does not by itself make the agent faster, and $p_{\min}$, the probability a
-single frontier launch advances a milestone, remains the term that actually decides the
-run and the one this document cannot derive from first principles.
+Two corrections since the previous edition, pulling in opposite directions. $L$ rose from
+45 to 63 as the milestone chain was refined (including the `forest_north_gate` rung added
+to fix the connector-map stall of ARCHITECTURE §4c), which costs a factor of 1.47 in the
+bound. And the throughput constant fell from an optimistic 1200 steps/s — a figure taken
+from emulators running *without* a concurrent learner — to the 455 steps/s actually
+sustained across an 88.7M-step run. **The honest table is roughly 3.7× slower than the one
+it replaces**, and the earlier version should not be cited.
 
-This is a *pessimistic* reading of the bound: it charges every phase a full $T$-step
-episode, whereas most milestones are reached in a few hundred steps and the run ends the
-episode early on termination. It nonetheless lands in the same order of magnitude as the
-only comparable published completion, Gemini 2.5 Pro's 813-hour first run and 406-hour
-second run on Pokémon Blue (2025), which is the sanity check that matters.
+$p_{\min}$ — the probability a single frontier launch advances a milestone — remains the
+term that decides the run and the one this document cannot derive from first principles.
 
-**The honest reading of the table: "most likely reaches the goal" is a statement about
-days of compute, not hours.** The 24-hour run this repository ships with is expected to
-clear the early-to-middle chain (Brock, Mt. Moon, Misty), not to finish the game. The
-system is built to be resumed, and §7 is the argument for why resuming it converges.
+This is otherwise a *pessimistic* reading: it charges every phase a full $T$-step episode,
+whereas most milestones are reached in a few hundred steps and the run ends the episode
+early on termination. It lands in the same order of magnitude as the only comparable
+published completion — Gemini 2.5 Pro's 813-hour first run and 406-hour second run on
+Pokémon Blue (2025) — which is the sanity check that matters.
+
+**"Most likely reaches the goal" is a statement about
+days to weeks of compute, not hours.** A 24-hour run is expected to clear part of the
+early chain, not to finish the game. The system is built to be resumed, and §7 is the
+argument for why resuming it converges.
+
+### 7b. What the longest run to date actually did
+
+The bound above is about $p_{\min}$ holding *uniformly*. The measured run shows what
+happens when it does not — which is the practically important failure mode, and the
+justification for the plateau-monitoring loop the project runs alongside training.
+
+| | |
+|---|---|
+| env steps | 88 660 184 |
+| gradient updates | 211 083 |
+| best milestone | **15 / 63** — *Fighting in Pewter Gym* |
+| badges | 0 |
+| archive | 477 cells over 20 maps, max milestone 14 |
+
+Progress was not rate-limited by $p_{\min}$ being uniformly small. It was rate-limited by a
+handful of milestones where $p_i$ was **exactly zero** for structural reasons that had
+nothing to do with the policy — a connector map ranked $-1$ so the archive never restored
+to the forest exit (38M steps); the archive never banking experience so levelling was
+impossible (27M steps); no reward for winning a battle so fleeing dominated fighting.
+Each is documented in ARCHITECTURE §4c–§5d. After each fix the milestone moved within
+30k–250k steps.
+
+The lesson for (A4): the assumption most likely to fail is not "the world model cannot fit
+this phase". It is "$p_i = 0$ because of a defect in the archive or the reward, and the run
+looks healthy while it happens" — losses falling, throughput logged, no crashes. Every one
+of these was found by instrumenting the live run, never by the test suite, because each is
+a property of a long run rather than of a function.
 
 ---
 
@@ -456,15 +566,13 @@ the world model fits. This is why the world model must be the core rather than a
 accessory: it is the object whose accuracy bounds the policy improvement.
 
 **8.3 Directed exploration.** Within a phase, the epistemic bonus of §6.3 drives the agent
-toward transitions the ensemble disagrees about, which, having just been launched from a
+toward transitions the ensemble disagrees about — which, having just been launched from a
 frontier cell, is precisely the unexplored region beyond it. This is what makes $p_i$
 behave like a constant rather than like $\varepsilon^{H_i}$.
 
 ---
 
 ## 9. Assumptions, restated as failure modes
-
-An honest proof names the ways it can be wrong.
 
 | assumption | status | how it could fail |
 |---|---|---|
@@ -473,8 +581,10 @@ An honest proof names the ways it can be wrong.
 | (A2) Frontier monotonicity | **Proved** in code + stress test | Only via an eviction bug. |
 | Lemma 1 exploration floor | **Proved**, holds always | None; it is structural. |
 | (A1) Local reachability | **Assumed**, justified by game design | A true soft-lock, or an archived cell at level $i$ from which $i{+}1$ is unreachable *and* no better cell is ever found. |
-| (A3) Frontier selection | **Proved** given the archive's contents | Degrades if `frontier_frac` collapses, logged every run. |
-| **(A4) Learnability** | **Assumed; the load-bearing one** | If the world model fails to fit some phase, $p_i \to \varepsilon^{H_i}$ and Theorem 2 degenerates into Theorem 1. |
+| (A3) Frontier selection | **Proved** given the archive's contents | Degrades if `frontier_frac` collapses — logged every run. |
+| Policy invariance of $r^{\text{evt}}$ | **False, knowingly** (§6.1c) | Already false: `battle_won` admits a grinding fixed point worth ~20 discounted against a badge at 64. Bounded by episode truncation and by the archive selecting on $\ell$ rather than return. |
+| Archive preserves what it accumulates | **Verified by repair, not by construction** | Held wrong for `hp_frac`, `level_sum` and `exp` simultaneously; each silently made some $p_i = 0$. Guarded by tests now, but this is the class of defect that has cost this project the most steps. |
+| **(A4) Learnability** | **Assumed; the load-bearing one** | If the world model fails to fit some phase, $p_i \to \varepsilon^{H_i}$ and Theorem 2 degenerates into Theorem 1. Empirically the observed $p_i = 0$ cases were *all* archive or reward defects, not model capacity — see §7b. |
 
 (A4) is where a claim of certainty would be dishonest. Nothing in this document proves the
 RSSM can model Silph Co.; it proves that *if* it learns each phase to any constant success
@@ -488,20 +598,27 @@ evidence for (A4) over the early chain. The later chain is extrapolation.
 
 ## 10. Summary
 
-1. **Lemma 1**, the policy's action distribution is floored at $\varepsilon = 1.4\times10^{-3}$
+1. **Lemma 1** — the policy's action distribution is floored at $\varepsilon = 1.4\times10^{-3}$
    by unimix. Structural, always true.
-2. **Lemma 2**, the frontier archive turns $\prod_i p_i$ into $\sum_i 1/p_i$. This is the
-   whole reason the problem is tractable, and it is worth ~49 orders of magnitude at
-   $p = 0.1$.
-3. **Theorem 1**, completion happens almost surely. Unconditional, but with a useless rate.
-4. **Theorem 2**, $N \ge \frac{L}{\rho\sigma p_{\min}}\ln\frac{L}{\delta}$ episodes give
+2. **Lemma 2** — the frontier archive turns $\prod_i p_i$ into $\sum_i 1/p_i$. This is the
+   whole reason the problem is tractable, and it is worth **~59.5 orders of magnitude** at
+   $p = 0.1$ and $L = 63$.
+3. **Theorem 1** — completion happens almost surely. Unconditional, but with a useless rate.
+4. **Theorem 2** — $N \ge \frac{L}{\rho\sigma p_{\min}}\ln\frac{L}{\delta}$ episodes give
    failure probability $\le \delta$: linear in the number of milestones, logarithmic in
    confidence.
-5. **§6**, the shaped reward is potential-based on its progress terms, summable on its
-   novelty terms, bounded on its intrinsic terms, and verification-gated on its LLM term.
-   None of them moves the optimum.
-6. **§7**, with measured constants, completion is a multi-day proposition at
-   $p_{\min}\approx0.05$–$0.1$, matching the only comparable published result.
+5. **§6** — the shaped reward is potential-based on its progress terms (monotone *and*
+   symmetric), summable on its novelty terms, bounded on its intrinsic terms, and
+   verification-gated on its LLM term. **The event terms are the exception**: `battle_won`
+   and its relatives are repeatable, do not telescope, and admit a grinding fixed point
+   worth ~20 discounted against a badge at 64. §6.1c states why that trade was taken and
+   what bounds it.
+6. **§7** — with measured constants, completion is a multi-day-to-multi-week proposition at
+   $p_{\min}\approx0.05$–$0.1$, matching the only comparable published result. This is
+   3.7× more pessimistic than the previous edition of the table.
+7. **§7b** — in practice, the binding constraint has not been $p_{\min}$ being small. It
+   has been $p_i$ being **exactly zero** at a handful of milestones because of defects in
+   the archive or the reward, each of which left every other metric looking healthy.
 
 ### References
 
